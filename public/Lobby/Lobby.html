@@ -1,0 +1,16 @@
+<link rel="stylesheet" href="Lobby/style.css">
+
+<div class="welcome-div">
+    <p class="heading">Hello {{ username }}</p>
+</div>
+<div class="chats-div">
+    <p class="heading">Chatrooms:</p>
+    <ul>
+        <!-- Show all Channels -->
+        <li ng-repeat="channel in channels" class="listentry">
+            <a href="#!{{ channel }}" class="link" >
+            {{ channel }}
+            </a>
+        </li>
+    </ul>
+</div>
