@@ -1,0 +1,27 @@
+<link rel="stylesheet" href="Room/style.css">
+
+<div class="heading-div">
+    <p class="heading">Welcome {{ username }} in Room {{ room }}!</p>
+</div>
+<div class="chat-container">
+<div class="users-div">
+    <!-- Show all Users -->
+    <ul>
+        <li ng-repeat="user in users track by $index">{{ user }}</li>
+    </ul>
+</div>
+<div class="chat-div">
+    <div ng-repeat="message in messages" ng-class="message.name === username ? 'message-own' : 'message-other'">
+        <p class="message-name">{{ message.name }}</p>
+        <p class="message-message">{{ message.message }}</p>
+        <p class="message-time">{{ message.time }}</p>
+    </div>
+</div>
+<div class="input-div">
+    <form class="input-form">
+        <input ng-model="chatmessage" type="text" placeholder="Enter your Message..." class="input-field"/>
+        <button ng-click="sendMessage()" class="input-button">Send..</button>
+    </form>
+</div>
+
+</div>
