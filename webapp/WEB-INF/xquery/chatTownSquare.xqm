@@ -7,14 +7,10 @@ declare
   %ws:connect("/")
   function townsquare:connect(
   )  {
-    (: Send Json-Object to the Connecting user (with id: websocket:id() ) :)
-    websocket:send(
       json:serialize(
         <json type="object">
           <type>Connect</type>
         </json>
-      ), 
-      websocket:id()
     )
   };
  
@@ -42,23 +38,21 @@ declare
     (: Check what type the Message has:)
     return if ($type = "Ping") then (
       let $id := websocket:id()
-      let $resp := json:serialize(
+      return json:serialize(
         <json type="object">
           <type>Pong</type>
         </json>)
-        return (websocket:send($resp,$id))
     )else if ($type = "UpdatedName") then(
         let $id := websocket:id()
         let $set := websocket:set("name", $name) 
         let $setroom := websocket:set("room", $room) 
-        let $resp := json:serialize(
+        return json:serialize(
           <json type="object">
             <type>UpdatedName</type>
             <id>{$id}</id>
             <room>{$room}</room>
           </json>
         )
-        return (websocket:send($resp,$id))
       )
       else if ($type = "GetUsers") then(
         let $ids := websocket:ids()
