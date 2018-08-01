@@ -1,6 +1,7 @@
 module namespace townsquare = 'http://basex.org/modules/web-page';
 (: Import the Websocket-Module :)
 import module namespace websocket = "http://basex.org/modules/Websocket";
+import module namespace websockets = "http://basex.org/modules/Websockets";
 
 (: If the Websocket is opened :)
 declare
@@ -18,9 +19,9 @@ declare
      @parm: $room the Room 
  :)
  declare function townsquare:getNames($room){
-   for $uid in websocket:ids()
-          where websocket:get($uid,"room") = $room
-          return websocket:get($uid,"name")
+   for $uid in websockets:ids()
+          where websockets:get($uid,"room") = $room
+          return websockets:get($uid,"name")
  };
  
  (: If a Message is recieved:)
@@ -55,7 +56,7 @@ declare
         )
       )
       else if ($type = "GetUsers") then(
-        let $ids := websocket:ids()
+        let $ids := websockets:ids()
         let $names := townsquare:getNames($room)
 
         let $id := websocket:id()
@@ -67,10 +68,10 @@ declare
                       <names>{$names}</names>
                     </json>
                   )  
-        return (websocket:emit($resp)) 
+        return (websockets:emit($resp)) 
       )
       else (
-        websocket:emit($message)
+        websockets:emit($message)
       )
   };
   
