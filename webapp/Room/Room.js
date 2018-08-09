@@ -1,28 +1,46 @@
-app.controller("roomCtrl", function ($scope, $rootScope, $location, $interval) {
-    var ws;
-    $scope.username = $rootScope.username;
+app.controller("roomCtrl", function ($scope, $rootScope, $location, $window, wsservice) {
+    /** Message types*/
+    const TYPE_CONNECT_MSG = "Connect";
+    const TYPE_ENTER_ROOM = "EnterRoom";
+    const TYPE_LEAVE_ROOM = "LeaveRoom";
+    const TYPE_MESSAGE = "Message";
+    const TYPE_CHECK_IF_LOGGED_IN = "CheckIfLoggedIn";
+    const TYPE_USERS_ROOM_UPDATED = "UserRoomUpdated";
+
     $scope.room = $location.path();
-    // IF no Username set, go to login
-    if(!$scope.username || $scope.username.length === 0) {
-        $location.path("/");
-    }
     $scope.chatmessage = "";
     $scope.users = [];
     $scope.messages = [];
+    $scope.username = "";
+
+    /**
+     * Check if the websocket is open or open it.
+     * If it is open, check if we are logged in.
+     * */
+    if(wsservice.websocketSet()){
+        let msg = {
+            "type": TYPE_CHECK_IF_LOGGED_IN
+        };
+        wsservice.send(msg);
+    } else {
+        wsservice.openWebsocket();
+    }
+    wsservice.addOnMessage(onMessage);
+
 
     /**
      * If the User want to send a Message.
      * */
     $scope.sendMessage = function () {
-        var d = new Date();
-        var newMsg = {
-            "type":     "Message",
+        let d = new Date();
+        let newMsg = {
+            "type":     TYPE_MESSAGE,
             "name":     $scope.username,
             "room":     $scope.room,
             "time":     d.toLocaleTimeString(),
             "message":  $scope.chatmessage
         };
-        ws.send(JSON.stringify(newMsg));
+        wsservice.send(newMsg);
         // Reset the Inputfield
         $scope.chatmessage = "";
     };
@@ -30,81 +48,55 @@ app.controller("roomCtrl", function ($scope, $rootScope, $location, $interval) {
     // If the Client recieves a Message, call this function
     function onMessage ( event ) {
         // Parse it as Json
-        var jsonMsg = JSON.parse(event.data);
-        console.log(jsonMsg);
-        // Response "Pong" to "Ping"
-        if(jsonMsg.type === "Ping") {
-            var msg = {
-                "type" : "Pong"
-            };
-            ws.send(JSON.stringify(msg));
-        }
+        let jsonMsg = JSON.parse(event.data);
 
-        // If it is a Connect Message, send a updateusername message
-        if(jsonMsg.type === "Connect"){
-            var connectMsg = {
-                "type":     "UpdatedName",
-                "name":     $scope.username,
-                "room":     $scope.room,
-                "userid" :     jsonMsg.id
-            };
-            ws.send(JSON.stringify(connectMsg));
-        }
-
-        // If the Message is for another Room
-        if(jsonMsg.room !== $scope.room) {
-            return;
-        }
-
-        // If the Message is a plain message, add it to the messages array
-        if(jsonMsg.type === "Message"){
-            $scope.messages.push(jsonMsg);
-            $scope.$apply();
-        }
-
-        // If it is a UpdatedName Message, add the User to the users array
-        if(jsonMsg.type === "UpdatedName"){
-            console.log("Send Get Users");
-            var msg = {
-                "type": "GetUsers",
-                "room": $scope.room,
-                "name": $scope.username
-            };
-            ws.send(JSON.stringify(msg));
-            $scope.$apply();
-        }
-        if(jsonMsg.type === "GetUsers") {
-            var names = jsonMsg.names.split(' ');
-            $scope.users = names;
-            $scope.$apply();
-        }
-        if(jsonMsg.type === "Disconnect") {
-            alert("so disconnected");
+        switch(jsonMsg.type) {
+            // If the websocket is just created it sends a connect. After that we want to ask for the username.
+            case TYPE_CONNECT_MSG:
+                let checklogmsg = {
+                    "type": TYPE_CHECK_IF_LOGGED_IN
+                };
+                wsservice.send(checklogmsg);
+                break;
+            // If we are logged in, set the variables. If not: redirect to login page
+            case TYPE_CHECK_IF_LOGGED_IN:
+                if(jsonMsg.loggedIn === "false") {
+                    wsservice.closeWs();
+                    $location.path("/");
+                    return;
+                }
+                $scope.username = jsonMsg.name;
+                $scope.$apply();
+                let enterroommsg = {
+                    "type": TYPE_ENTER_ROOM,
+                    "room": $scope.room
+                };
+                wsservice.send(enterroommsg);
+                break;
+            // If the users of the room were updated, set the names
+            case TYPE_USERS_ROOM_UPDATED:
+                if($scope.room !== jsonMsg.room) return;
+                let names = jsonMsg.namesInRoom.split(' ');
+                $scope.users = names;
+                $scope.$apply();
+                break;
+            // If it is a message, push it to the messages.
+            case TYPE_MESSAGE:
+                if(jsonMsg.room !== $scope.room) return;
+                $scope.messages.push(jsonMsg);
+                $scope.$apply();
+                break;
         }
     }
 
-    // Connect to the Websocket
-    $scope.connectWebsocket = function () {
-        // Open a Websocket
-        var websocketAdress = 'ws://localhost:80/ws';
-        ws = new WebSocket(websocketAdress);
-
-        ws.onopen = function (event) {
-            // Send a "Ping" every 8secs to prevent a timeout
-            $interval(
-                function(){
-                                var msg = {
-                                    "type": "Ping"
-                                };
-                                ws.send(JSON.stringify(msg));
-                            }
-            , 8000);
+    // If the Page unloads. !!! This doesnt chatch the browser back-button!
+    $window.onbeforeunload = function(event)
+    {
+        alert("onbevoreunload");
+        let msg = {
+            "type": TYPE_LEAVE_ROOM
         };
-
-        // Check what to do if a Message arrives
-        ws.onmessage = function (event) {
-            onMessage(event);
-        };
+        wsservice.send(msg);
+        wsservice.removeFromOnMessage(onMessage);
     };
-    $scope.connectWebsocket();
 });

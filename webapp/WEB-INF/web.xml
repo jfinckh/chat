@@ -105,6 +105,7 @@
   </servlet-mapping>
   
   <!-- RESTXQ Service (can be disabled by removing this entry)
+  -->
   <servlet>
     <servlet-name>RESTXQ</servlet-name>
     <servlet-class>org.basex.http.restxq.RestXqServlet</servlet-class>
@@ -118,7 +119,6 @@
     <servlet-name>RESTXQ</servlet-name>
     <url-pattern>/restxq/*</url-pattern>
   </servlet-mapping>
-  -->
 
   <!-- Mapping for static resources (may be restricted to a sub path) -->
   <servlet>

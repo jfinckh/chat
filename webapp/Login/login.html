@@ -1,10 +1,16 @@
 <link rel="stylesheet" href="Login/style.css">
 
 <div class="login-div">
-    <div class="form">
-        <form class="login-form">
-            <input ng-model="name" type="text" placeholder="username"/>
-            <button ng-click="enterChat()">Zum Chat!</button>
+    <div class="form" >
+        <form class="login-form" ng-if="!loggedIn">
+            <input ng-model="$parent.name" type="text" placeholder="username"/>
         </form>
+        <div class="login-form" ng-if="loggedIn">
+            <h2>Welcome {{ name }}</h2>
+        </div>
+        <button ng-click="login()" ng-if="!loggedIn">Log In</button>
+        <button ng-click="enterChat()" ng-if="loggedIn">Enter Chat!</button>
+        <hr/>
+        <button ng-click="logout()" ng-if="loggedIn">Log Out</button>
     </div>
 </div>
