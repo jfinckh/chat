@@ -1,6 +1,6 @@
 module namespace chat = 'http://basex.org/modules/web-page';
 (: Import the Websocketsmodules :)
-import module namespace websockets = "http://basex.org/modules/Websockets";
+import module namespace websocket = "http://basex.org/modules/Websocket";
 (: Import the messagesmodule :)
 import module namespace messages = "messages" at "messages.xqm";
 (: Import the helperfunctionsmodule :)
@@ -48,7 +48,7 @@ declare
     )
     (: in all other cases (f.e. normal message) emit it to all connected users:)
     else (
-      websockets:emit($message)
+      websocket:emit($message)
     )
   };
   

@@ -120,6 +120,16 @@
     <url-pattern>/restxq/*</url-pattern>
   </servlet-mapping>
 
+  <!-- REST Service (can be disabled by removing this entry) -->
+  <servlet>
+    <servlet-name>REST</servlet-name>
+    <servlet-class>org.basex.http.rest.RESTServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>REST</servlet-name>
+    <url-pattern>/rest/*</url-pattern>
+  </servlet-mapping>
+  
   <!-- Mapping for static resources (may be restricted to a sub path) -->
   <servlet>
     <servlet-name>default</servlet-name>

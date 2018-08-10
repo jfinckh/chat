@@ -1,7 +1,6 @@
 module namespace messages = 'messages';
 (: Import the websocket/s-modules:)
 import module namespace websocket = "http://basex.org/modules/Websocket";
-import module namespace websockets = "http://basex.org/modules/Websockets";
 (: Import the session/s-modules :)
 import module namespace Session = "http://basex.org/modules/Session";
 import module namespace Sessions = "http://basex.org/modules/Sessions";
@@ -24,7 +23,7 @@ declare function messages:ping() {
                                 <type>Pong</type>
                               </json>
                             )
-  return websockets:send($resp,websocket:id())
+  return websocket:send($resp,websocket:id())
 };
 
 (: Function for responding to a CheckIfLoggedIn message.
@@ -41,7 +40,7 @@ declare function messages:check-if-logged-in(){
                                    <loggedIn>{$logged-in}</loggedIn>
                                  </json>
                                )
-   return websockets:send($resp,websocket:id())
+   return websocket:send($resp,websocket:id())
 };
 
 (: Client login. Sets the clientname in the session and response with a 
@@ -87,7 +86,7 @@ declare function messages:enter-room($room){
                                   <namesInRoom>{$names-in-room}</namesInRoom>
                                 </json>
                               )
-  return websockets:emit($resp)   
+  return websocket:emit($resp)   
 };
 
 (: Function for leaving the room, checks how many tabs are open :)
@@ -112,7 +111,7 @@ declare function messages:leave-room(){
                               )       
   (: Use emit here because if the user has more than one tabs open he 
   wants to get informed in all tabs :) 
-  return websockets:emit($resp)
+  return websocket:emit($resp)
 };
 
 (: If an error occured, remove the client from the room and update the other
@@ -129,5 +128,5 @@ declare function messages:error(){
                                 <namesInRoom>{$names-in-room}</namesInRoom>
                               </json>
                               )
-    return (websockets:emit($resp))
+    return (websocket:emit($resp))
 };
