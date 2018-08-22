@@ -1,11 +1,11 @@
-app.controller("roomCtrl", function ($scope, $rootScope, $location, $window, wsservice) {
+app.controller("roomCtrl", function ($scope, $rootScope, $location, $window, wsservice, $http) {
     /** Message types*/
     const TYPE_CONNECT_MSG = "Connect";
     const TYPE_ENTER_ROOM = "EnterRoom";
     const TYPE_LEAVE_ROOM = "LeaveRoom";
     const TYPE_MESSAGE = "Message";
-    const TYPE_CHECK_IF_LOGGED_IN = "CheckIfLoggedIn";
     const TYPE_USERS_ROOM_UPDATED = "UserRoomUpdated";
+    const TYPE_SET_WEBSOCKET_SESS_MSG = "SetWebsocketSess";
 
     $scope.room = $location.path();
     $scope.chatmessage = "";
@@ -13,21 +13,27 @@ app.controller("roomCtrl", function ($scope, $rootScope, $location, $window, wss
     $scope.messages = [];
     $scope.username = "";
 
-    /**
-     * Check if the websocket is open or open it.
-     * If it is open, check if we are logged in.
-     * */
-    if(wsservice.websocketSet()){
-        let msg = {
-            "type": TYPE_CHECK_IF_LOGGED_IN
-        };
-        wsservice.send(msg);
-    } else {
-        wsservice.openWebsocket();
-    }
-    wsservice.addOnMessage(onMessage);
-
-
+    // Send RestXq Request to check if the user is logged in
+    let url = '/restxq/loginCheck';
+    $http.get(url).then((result) => {
+        let jsonMsg = result.data;
+        //let jsonMsg = JSON.parse(result.data);
+        if(jsonMsg.loggedIn !== "true"){
+            $location.path("/");
+        } else{
+            $scope.username = jsonMsg.name;
+            if(wsservice.websocketSet()){
+                let enterroommsg = {
+                    "type": TYPE_ENTER_ROOM,
+                    "room": $scope.room
+                };
+                wsservice.send(enterroommsg);
+            } else {
+                wsservice.openWebsocket();
+            }
+            wsservice.addOnMessage(onMessage);
+        }
+    });
     /**
      * If the User want to send a Message.
      * */
@@ -48,25 +54,17 @@ app.controller("roomCtrl", function ($scope, $rootScope, $location, $window, wss
     // If the Client recieves a Message, call this function
     function onMessage ( event ) {
         // Parse it as Json
+        console.log(event);
         let jsonMsg = JSON.parse(event.data);
 
         switch(jsonMsg.type) {
             // If the websocket is just created it sends a connect. After that we want to ask for the username.
             case TYPE_CONNECT_MSG:
-                let checklogmsg = {
-                    "type": TYPE_CHECK_IF_LOGGED_IN
+                let setWebsocketSessMsg = {
+                    "type": TYPE_SET_WEBSOCKET_SESS_MSG
                 };
-                wsservice.send(checklogmsg);
-                break;
-            // If we are logged in, set the variables. If not: redirect to login page
-            case TYPE_CHECK_IF_LOGGED_IN:
-                if(jsonMsg.loggedIn === "false") {
-                    wsservice.closeWs();
-                    $location.path("/");
-                    return;
-                }
-                $scope.username = jsonMsg.name;
-                $scope.$apply();
+                wsservice.send(setWebsocketSessMsg);
+
                 let enterroommsg = {
                     "type": TYPE_ENTER_ROOM,
                     "room": $scope.room
@@ -75,14 +73,12 @@ app.controller("roomCtrl", function ($scope, $rootScope, $location, $window, wss
                 break;
             // If the users of the room were updated, set the names
             case TYPE_USERS_ROOM_UPDATED:
-                if($scope.room !== jsonMsg.room) return;
                 let names = jsonMsg.namesInRoom.split(' ');
                 $scope.users = names;
                 $scope.$apply();
                 break;
             // If it is a message, push it to the messages.
             case TYPE_MESSAGE:
-                if(jsonMsg.room !== $scope.room) return;
                 $scope.messages.push(jsonMsg);
                 $scope.$apply();
                 break;

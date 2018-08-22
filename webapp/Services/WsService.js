@@ -25,7 +25,7 @@ app.factory("wsservice", function ($interval) {
             function(){
                 service.send(PING);
             }
-            , 8000);
+            , 99990);
     };
     // Add the pingmessage to the onopenfunctions
     onOpenFunctions.push(sendPing);

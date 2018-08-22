@@ -6,14 +6,14 @@ import module namespace messages = "messages" at "messages.xqm";
 (: Import the helperfunctionsmodule :)
 import module namespace helperfunctions = "helperfunctions" at "helperfunctions.xqm";
 
-(: If the WebSocket is opened :)
+ (: If the WebSocket is opened :)
 declare
   %ws:connect("/")
   function chat:connect(
   )  {
      messages:connect()
   };
- 
+  
  (: If a message is recieved:)
 declare
   %ws:message("/","{$message}")
@@ -22,7 +22,7 @@ declare
   ){
     (: Parse the json message:)
     let $msg := parse-json($message)
-    (: Get the attributes: type, namem, room from the message:)
+    (: Get the attributes: type, name, room from the message:)
     let $type := map:get($msg, "type")
     let $name := map:get($msg, "name")
     let $room := map:get($msg, "room")
@@ -30,13 +30,10 @@ declare
     return if ($type = "Ping") then (
       messages:ping()
     )
-    (: Check if the client is already logged in :)
-    else if( $type = "CheckIfLoggedIn") then (
-      messages:check-if-logged-in()
-    )
-    (: Log In :)
-    else if ($type = "Login") then(
-      messages:login($name)
+    (: Set the WebsocketSession to the Session :)
+    (: If the user opens two tabs, the newest one will be updated :)
+    else if($type = "SetWebsocketSess") then(
+      messages:set-websocket-sess()
     )
     (: If the user joins a room:)
     else if ($type = "EnterRoom") then(
@@ -46,7 +43,11 @@ declare
     else if ($type = "LeaveRoom") then(
       messages:leave-room()
     )
-    (: in all other cases (f.e. normal message) emit it to all connected users:)
+    (: If it is a normal message: :)
+    else if ($type = "Message") then (
+      messages:message($room, $message)
+    )
+    (: in all other cases emit it to all connected users:)
     else (
       websocket:emit($message)
     )
